@@ -71,62 +71,8 @@ last_curiosity_sent = datetime.now() - timedelta(hours=6)
 async def send_news(context, entry):
     if hasattr(entry, 'published_parsed'):
         published = datetime(*entry.published_parsed[:6])
-        forced_today = datetime(2025, 4, 29).date()
-        if published.date() != forced_today:
+        if published.date() != datetime.now().date():
             return
-
-    # Filtro mejorado: sólo noticias relevantes de videojuegos
-    valid_keywords = [
-        "videojuego", "videojuegos", "juego", "juegos", "playstation", "ps5", "ps4",
-        "xbox", "series x", "series s", "nintendo", "switch", "consola", "gameplay",
-        "tráiler", "trailer", "beta", "demo", "expansion", "dlc", "actualización",
-        "remaster", "remake", "multijugador", "early access", "open beta", "requisitos",
-        "jugable", "filtrado", "filtrada", "leak", "desarrollo", "anuncio", "anunciado"
-    ]
-    blocked_keywords = [
-        "teclado", "hardware", "ratón gaming", "ratón", "periférico", "gaming gear",
-        "iphone", "ipad", "android", "smartphone", "smartwatch",
-        "película", "películas", "serie", "series", "netflix", "disney+",
-        "hbo", "filme", "cine", "manga", "anime", "cómic", "comics",
-        "oferta teclado", "oferta ratón", "rebaja gaming gear"
-    ]
-    title_summary = (entry.title + " " + (entry.summary if hasattr(entry, 'summary') else "")).lower()
-
-    contiene_valida = any(p in title_summary for p in valid_keywords)
-    contiene_bloqueada = any(p in title_summary for p in blocked_keywords)
-
-    # Excepción: permitir franquicias aunque haya palabras bloqueadas
-    franquicias_permitidas = [
-        "pokemon masters", "overwatch", "zelda", "titanfall", "gears of war", "halo",
-        "call of duty", "final fantasy", "resident evil", "assassin's creed"
-    ]
-    if any(franq in title_summary for franq in franquicias_permitidas):
-        contiene_bloqueada = False
-
-    # Nueva lógica mejorada
-    es_oferta_juego_o_consola = any(p in title_summary for p in [
-        "juego", "videojuego", "consola", "ps5", "ps4", "xbox", "switch", 
-        "dualshock", "dual sense", "pro controller", "joy-con", "headset ps5", "auriculares xbox"
-    ]) and any(p in title_summary for p in [
-        "oferta", "rebaja", "descuento", "promoción", "precio especial", "chollo", "ahorro"
-    ])
-
-    if contiene_bloqueada:
-        print(f"🔴 Descartada por palabra bloqueada → {entry.title}")
-        return
-
-    if not contiene_valida and not es_oferta_juego_o_consola:
-        print(f"🔴 Descartada por no ser de videojuegos → {entry.title}")
-        return
-
-    # Filtro estricto: sólo pasar si claramente se menciona videojuego
-    if not any(word in title_summary for word in [
-        "juego", "videojuego", "consola", "nintendo", "playstation", "xbox", 
-        "ps5", "ps4", "switch", "steam", "gameplay", "tráiler", "trailer", 
-        "expansión", "dlc", "beta", "demo", "remaster", "remake", "early access", "battle pass"
-    ]):
-        print(f"🔴 Descartada: noticia no relacionada con videojuegos → {entry.title}")
-        return
 
     # Filtro: excluir noticias de cine o series que no estén relacionadas con videojuegos
     title_lower = entry.title.lower()
@@ -163,7 +109,6 @@ async def send_news(context, entry):
         platform_label = 'NOTICIAS GAMER'
         icon = '🎮'
         tag = '#NoticiasGamer'
-
     # Ajuste de plataforma en base a etiquetas especiales prioritarias
     # Prioridad: Evento > Oferta > Guía > Análisis
     if any(tag == "#EventoEspecial" for tag in special_tags):
@@ -192,13 +137,8 @@ async def send_news(context, entry):
     emoji_special = ''
 
     # Evento especial detection
-    evento_keywords = [
-        "state of play", "nintendo direct", "showcase", "summer game fest",
-        "game awards", "evento especial", "presentation", "conference", "presentación",
-        "wholesome direct", "evento de juegos", "evento indie", "presentación indie"
-    ]
-
-    if any(kw in title_lower for kw in evento_keywords):
+    if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación",
+        "wholesome direct", "evento de juegos", "evento indie", "presentación indie"]):
         special_tags.insert(0, "#EventoEspecial")
         emoji_special = '🎬'
 
@@ -215,11 +155,15 @@ async def send_news(context, entry):
             emoji_special = '🎁'
 
     # Proximo lanzamiento detection
-    if any(kw in title_lower for kw in ["anunci", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha de salida", "confirmado para", "a la venta"]):
+    if any(kw in title_lower for kw in ["anunci", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access"]):
         if not any(block in title_lower for block in ["mantenimiento", "servidores", "online", "downtime", "actualización", "patch notes"]):
             special_tags.append("#ProximoLanzamiento")
             if not emoji_special:
                 emoji_special = '🎉'
+
+    if "#ProximoLanzamiento" in special_tags:
+        fecha_publicacion = published.strftime('%d/%m/%Y') if 'published' in locals() else "Próximamente"
+        proximos_lanzamientos.append(f"- {entry.title} ({fecha_publicacion})")
 
     # Oferta especial detection (mejorado: incluye reservas y más expresiones)
     if any(kw in title_lower for kw in [
@@ -318,20 +262,10 @@ async def check_feeds(context):
     for feed_url in RSS_FEEDS:
         feed = feedparser.parse(feed_url)
         for entry in feed.entries[:5]:
-            if is_article_saved(entry.link):
-                print(f"🔴 Descartada: link ya enviado anteriormente → {entry.link}")
-                continue
-
-            if hasattr(entry, 'published_parsed'):
-                published = datetime(*entry.published_parsed[:6])
-                if datetime.now() - published > timedelta(hours=6):
-                    print(f"🔴 Descartada: demasiado antigua ({published}) → {entry.link}")
-                    continue
-
-            await send_news(context, entry)
-            print(f"✅ Publicada correctamente: {entry.title}")
-            save_article(entry.link)
-            new_article_sent = True
+            if not is_article_saved(entry.link):
+                await send_news(context, entry)
+                save_article(entry.link)
+                new_article_sent = True
 
     # Revisión de eventos especiales detectados hoy
     today = datetime.now().date()
@@ -379,12 +313,29 @@ async def send_launch_summary(context):
     except Exception as e:
         print(f"Error al enviar resumen de lanzamientos: {e}")
 
-async def main():
+def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
+    application.job_queue.run_once(lambda context: asyncio.create_task(import_existing_links()), when=0)
+
     job_queue = application.job_queue
     job_queue.run_repeating(check_feeds, interval=600, first=10)
-    await application.run_polling()
+
+    print("Bot iniciado correctamente.")
+    application.run_polling()
+
+
+async def import_existing_links():
+    print("🔎 Importando mensajes antiguos del canal...")
+    bot = Bot(token=BOT_TOKEN)
+    updates = await bot.get_updates(limit=100)
+    for update in updates:
+        if update.message and update.message.text:
+            text = update.message.text
+            for word in text.split():
+                if word.startswith("http"):
+                    save_article(word)
+    print("✅ Importación completada.")
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
+    main()

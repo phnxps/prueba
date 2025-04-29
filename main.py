@@ -394,15 +394,19 @@ async def import_existing_links():
         print(f"Error importando mensajes antiguos: {e}")
 
 
-def main():
+async def start_bot():
+    global application
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     job_queue = application.job_queue
-    asyncio.run(import_existing_links())
+    await import_existing_links()
     job_queue.run_repeating(check_feeds, interval=600, first=10)
 
     print("Bot iniciado correctamente.")
-    application.run_polling()
+    await application.run_polling()
+
+def main():
+    asyncio.run(start_bot())
 
 
 

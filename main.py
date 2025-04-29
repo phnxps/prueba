@@ -68,10 +68,10 @@ proximos_lanzamientos = []
 last_curiosity_sent = datetime.now() - timedelta(hours=6)
 
 async def send_news(context, entry):
-    # Filtrar noticias recientes (últimas 6 horas)
+    # Filtrar noticias recientes (últimas 3 horas)
     if hasattr(entry, 'published_parsed'):
         published = datetime(*entry.published_parsed[:6])
-        if datetime.now() - published > timedelta(hours=6):
+        if datetime.now() - published > timedelta(hours=3):
             return
     # Permitimos todas las noticias, sin filtrar por fecha de publicación
 
@@ -250,18 +250,18 @@ async def send_news(context, entry):
     if special_title:
         caption = (
             f"{icon} {special_title}\n\n"
-            f"{emoji_special} *{entry.title}*\n\n"
+            f"*{entry.title}*\n\n"
             f"{hashtags}"
         ).strip()
     elif platform_label:
         caption = (
             f"{icon} *{platform_label}*\n\n"
-            f"{emoji_special} *{entry.title}*\n\n"
+            f"*{entry.title}*\n\n"
             f"{hashtags}"
         ).strip()
     else:
         caption = (
-            f"{emoji_special} *{entry.title}*\n\n"
+            f"*{entry.title}*\n\n"
             f"{hashtags}"
         ).strip()
 

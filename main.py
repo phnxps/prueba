@@ -379,21 +379,12 @@ async def send_launch_summary(context):
     except Exception as e:
         print(f"Error al enviar resumen de lanzamientos: {e}")
 
-async def start_bot():
-    global application
+async def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
-
     job_queue = application.job_queue
     job_queue.run_repeating(check_feeds, interval=600, first=10)
-
-    print("Bot iniciado correctamente.")
     await application.run_polling()
 
-def main():
-    asyncio.run(start_bot())
-
-
-
-
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
+

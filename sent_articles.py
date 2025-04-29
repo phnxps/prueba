@@ -24,16 +24,20 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS articles (
                     id SERIAL PRIMARY KEY,
                     url TEXT UNIQUE,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    published_at TIMESTAMP
                 )
             ''')
             conn.commit()
 
-def save_article(url):
+def save_article(url, published_at=None):
     try:
         with get_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute('INSERT INTO articles (url) VALUES (%s) ON CONFLICT (url) DO NOTHING', (url,))
+                cursor.execute(
+                    'INSERT INTO articles (url, published_at) VALUES (%s, %s) ON CONFLICT (url) DO NOTHING',
+                    (url, published_at)
+                )
                 conn.commit()
     except Exception as e:
         print(f"Error al guardar artículo: {e}")
@@ -58,4 +62,13 @@ def get_all_articles():
     with get_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute('SELECT url FROM articles')
+            return [row[0] for row in cursor.fetchall()]
+
+def get_articles_not_in_channel(existing_urls, max_age_hours=3):
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''
+                SELECT url FROM articles
+                WHERE url NOT IN %s AND published_at >= NOW() - INTERVAL %s
+            ''', (tuple(existing_urls), f'{max_age_hours} hours'))
             return [row[0] for row in cursor.fetchall()]

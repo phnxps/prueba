@@ -99,7 +99,7 @@ async def send_news(context, entry):
         platform_label = 'PLAYSTATION'
         icon = '🎮'
         tag = '#PlayStation'
-    elif 'switch' in link:
+    elif 'switch' in link and ('switch' in title_lower or 'switch' in summary_lower):
         platform_label = 'NINTENDO SWITCH'
         icon = '🍄'
         tag = '#NintendoSwitch'
@@ -123,6 +123,10 @@ async def send_news(context, entry):
     if any(kw in title_lower for kw in ["direct", "evento especial", "showcase", "game awards", "presentation", "conference", "wholesome direct"]):
         special_tags.insert(0, "#EventoEspecial")
         emoji_special = '🎬'
+        # Añadir evento especial a la lista de próximos lanzamientos con fecha si está disponible
+        if 'published' in locals():
+            fecha_evento = published.strftime('%d/%m/%Y')
+            proximos_lanzamientos.append(f"- EVENTO: {entry.title} ({fecha_evento})")
 
     if any(kw in title_lower for kw in ["tráiler", "trailer", "gameplay", "avance"]):
         special_tags.append("#TrailerOficial")
@@ -153,6 +157,10 @@ async def send_news(context, entry):
             special_tags.insert(0, "#EventoEspecial")
             if not emoji_special:
                 emoji_special = '🎬'
+            # Añadir evento especial a la lista de próximos lanzamientos con fecha si está disponible
+            if 'published' in locals():
+                fecha_evento = published.strftime('%d/%m/%Y')
+                proximos_lanzamientos.append(f"- EVENTO: {entry.title} ({fecha_evento})")
 
     # Nueva detección de ofertas o rebajas (already handled above, but here to adjust platform_label if generic)
     if "#OfertaGamer" in special_tags:

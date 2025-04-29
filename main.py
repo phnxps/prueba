@@ -1,5 +1,6 @@
+que diferencias hay entre este codigo y el del textedit
+
 from sent_articles import init_db, save_article, is_article_saved
-init_db()
 import os
 import feedparser
 import telegram
@@ -109,20 +110,6 @@ async def send_news(context, entry):
         platform_label = 'NOTICIAS GAMER'
         icon = '🎮'
         tag = '#NoticiasGamer'
-    # Ajuste de plataforma en base a etiquetas especiales prioritarias
-    # Prioridad: Evento > Oferta > Guía > Análisis
-    if any(tag == "#EventoEspecial" for tag in special_tags):
-        platform_label = 'EVENTO ESPECIAL'
-        icon = '🎬'
-    elif any(tag == "#OfertaGamer" for tag in special_tags):
-        platform_label = 'OFERTA GAMER'
-        icon = '💸'
-    elif any(tag == "#GuiaGamer" for tag in special_tags):
-        platform_label = 'GUIA GAMER'
-        icon = '📚'
-    elif any(tag == "#ReviewGamer" for tag in special_tags):
-        platform_label = 'ANÁLISIS GAMER'
-        icon = '📝'
 
     title_lower = entry.title.lower()
 
@@ -137,8 +124,7 @@ async def send_news(context, entry):
     emoji_special = ''
 
     # Evento especial detection
-    if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación",
-        "wholesome direct", "evento de juegos", "evento indie", "presentación indie"]):
+    if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación"]):
         special_tags.insert(0, "#EventoEspecial")
         emoji_special = '🎬'
 
@@ -160,27 +146,6 @@ async def send_news(context, entry):
             special_tags.append("#ProximoLanzamiento")
             if not emoji_special:
                 emoji_special = '🎉'
-
-    if "#ProximoLanzamiento" in special_tags:
-        fecha_publicacion = published.strftime('%d/%m/%Y') if 'published' in locals() else "Próximamente"
-        proximos_lanzamientos.append(f"- {entry.title} ({fecha_publicacion})")
-
-    # Oferta especial detection (mejorado: incluye reservas y más expresiones)
-    if any(kw in title_lower for kw in [
-        "oferta", "rebaja", "descuento", "promoción", "precio especial", 
-        "baja de precio", "chollo", "ahorro", "por menos de", "por solo", 
-        "cuesta solo", "ahora a", "costaba", "a este precio", "reservar", "reserva", "mejor precio", "disponible para reservar"
-    ]):
-        special_tags.append("#OfertaGamer")
-        if not emoji_special:
-            emoji_special = '💸'
-
-    # Guia Gamer detection (después de #OfertaGamer)
-    if any(kw in title_lower for kw in [
-        "guía", "trucos", "cómo", "dónde", "localización", "encontrar", 
-        "conseguir", "desbloquear", "todos los secretos", "cómo encontrar", "guia completa"
-    ]):
-        special_tags.append("#GuiaGamer")
 
     if "#ProximoLanzamiento" in special_tags:
         fecha_publicacion = published.strftime('%d/%m/%Y') if 'published' in locals() else "Próximamente"

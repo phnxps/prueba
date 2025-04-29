@@ -81,7 +81,7 @@ async def send_news(context, entry):
         "remaster", "remake", "multijugador", "early access", "open beta"
     ]
     blocked_keywords = [
-        "teclado", "ratón", "movil", "móvil", "iphone", "ipad", "android", "smartphone",
+        "teclado", "hardware", "ratón gaming", "ratón", "periférico", "gaming gear", "movil", "móvil", "iphone", "ipad", "android", "smartphone",
         "smartwatch", "película", "películas", "serie", "series", "netflix", "disney+",
         "hbo", "filme", "cine", "manga", "anime", "cómic", "comics"
     ]
@@ -159,11 +159,17 @@ async def send_news(context, entry):
             emoji_special = '🎁'
 
     # Proximo lanzamiento detection
-    if any(kw in title_lower for kw in ["anunci", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access"]):
+    if any(kw in title_lower for kw in ["anunci", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha de salida", "confirmado para", "a la venta"]):
         if not any(block in title_lower for block in ["mantenimiento", "servidores", "online", "downtime", "actualización", "patch notes"]):
             special_tags.append("#ProximoLanzamiento")
             if not emoji_special:
                 emoji_special = '🎉'
+
+    # Oferta especial detection
+    if any(kw in title_lower for kw in ["oferta", "rebaja", "descuento", "promoción", "precio especial", "baja de precio", "chollo", "ahorro"]):
+        special_tags.append("#OfertaGamer")
+        if not emoji_special:
+            emoji_special = '💸'
 
     if "#ProximoLanzamiento" in special_tags:
         fecha_publicacion = published.strftime('%d/%m/%Y') if 'published' in locals() else "Próximamente"

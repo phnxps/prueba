@@ -69,6 +69,3 @@ def get_all_articles():
     init_db()
     save_article("https://ejemplo.com/test")
     print("✅ Guardado de prueba ejecutado.")
-    cursor.close()
-    conn.close()
-    return articles

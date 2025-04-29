@@ -90,8 +90,8 @@ async def send_news(context, entry):
         return
 
     link = entry.link.lower()
-    # Corrección de detección de plataforma priorizando título y resumen para Nintendo Switch 2
-    if any(kw in title_lower for kw in ["switch 2", "nintendo switch 2"]) or any(kw in summary_lower for kw in ["switch 2", "nintendo switch 2"]):
+    # Mejorada: detección precisa de Nintendo Switch 2 (requiere "nintendo" y "switch 2" en título o resumen)
+    if (("nintendo" in title_lower or "nintendo" in summary_lower) and ("switch 2" in title_lower or "switch 2" in summary_lower)):
         platform_label = 'NINTENDO SWITCH 2'
         icon = '🍄'
         tag = '#NintendoSwitch2'
@@ -129,8 +129,9 @@ async def send_news(context, entry):
             proximos_lanzamientos.append(f"- EVENTO: {entry.title} ({fecha_evento})")
 
     if any(kw in title_lower for kw in ["tráiler", "trailer", "gameplay", "avance"]):
-        special_tags.append("#TrailerOficial")
-        emoji_special = '🎥'
+        if not any(neg in title_lower for neg in ["no debería", "no tendrá", "sin tráiler", "sin trailer", "no tiene tráiler", "no hay tráiler", "no hay trailer"]):
+            special_tags.append("#TrailerOficial")
+            emoji_special = '🎥'
 
     if any(kw in title_lower for kw in ["códigos", "código", "code", "giftcode"]):
         special_tags.append("#CodigosGamer")
@@ -167,7 +168,7 @@ async def send_news(context, entry):
         # Si es oferta/rebaja, ajustar platform_label si es genérico
         if platform_label == 'NOTICIAS GAMER':
             # Intentar detectar plataforma en título o resumen para asignar plataforma correcta
-            if any(kw in title_lower for kw in ["switch 2", "nintendo switch 2"]) or any(kw in summary_lower for kw in ["switch 2", "nintendo switch 2"]):
+            if (("nintendo" in title_lower or "nintendo" in summary_lower) and ("switch 2" in title_lower or "switch 2" in summary_lower)):
                 platform_label = 'NINTENDO SWITCH 2'
                 icon = '🍄'
                 tag = '#NintendoSwitch2'
@@ -394,9 +395,10 @@ async def import_existing_links(context):
             offset = update.update_id + 1
             if update.message and update.message.text:
                 for word in update.message.text.split():
-                    if word.startswith("http"):
-                        seen_urls.add(word)
-                        save_article(word)
+                    clean_url = word.strip().strip('()[]<>.,!?\'"')
+                    if clean_url.startswith("http"):
+                        seen_urls.add(clean_url)
+                        save_article(clean_url)
     print(f"✅ Se han registrado {len(seen_urls)} URLs del canal como ya enviadas.")
 
 

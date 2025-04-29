@@ -83,14 +83,23 @@ async def send_news(context, entry):
     blocked_keywords = [
         "teclado", "hardware", "ratón gaming", "ratón", "periférico", "gaming gear", "movil", "móvil", "iphone", "ipad", "android", "smartphone",
         "smartwatch", "película", "películas", "serie", "series", "netflix", "disney+",
-        "hbo", "filme", "cine", "manga", "anime", "cómic", "comics"
+        "hbo", "filme", "cine", "manga", "anime", "cómic", "comics",
+        "oferta teclado", "oferta ratón", "rebaja gaming gear"
     ]
     title_summary = (entry.title + " " + (entry.summary if hasattr(entry, 'summary') else "")).lower()
 
     contiene_valida = any(p in title_summary for p in valid_keywords)
     contiene_bloqueada = any(p in title_summary for p in blocked_keywords)
 
-    if contiene_bloqueada and not contiene_valida:
+    # Nueva lógica mejorada
+    es_oferta_juego_o_consola = any(p in title_summary for p in [
+        "juego", "videojuego", "consola", "ps5", "ps4", "xbox", "switch", 
+        "dualshock", "dual sense", "pro controller", "joy-con", "headset ps5", "auriculares xbox"
+    ]) and any(p in title_summary for p in [
+        "oferta", "rebaja", "descuento", "promoción", "precio especial", "chollo", "ahorro"
+    ])
+
+    if contiene_bloqueada and not (contiene_valida or es_oferta_juego_o_consola):
         return
 
     # Filtro: excluir noticias de cine o series que no estén relacionadas con videojuegos
@@ -142,7 +151,13 @@ async def send_news(context, entry):
     emoji_special = ''
 
     # Evento especial detection
-    if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación"]):
+    evento_keywords = [
+        "state of play", "nintendo direct", "showcase", "summer game fest",
+        "game awards", "evento especial", "presentation", "conference", "presentación",
+        "wholesome direct", "evento de juegos", "evento indie", "presentación indie"
+    ]
+
+    if any(kw in title_lower for kw in evento_keywords):
         special_tags.insert(0, "#EventoEspecial")
         emoji_special = '🎬'
 
@@ -304,7 +319,7 @@ async def send_launch_summary(context):
 
 def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.job_queue.run_once(lambda context: asyncio.create_task(import_existing_links()), when=0)
+
 
     job_queue = application.job_queue
     job_queue.run_repeating(check_feeds, interval=600, first=10)
@@ -313,17 +328,6 @@ def main():
     application.run_polling()
 
 
-async def import_existing_links():
-    print("🔎 Importando mensajes antiguos del canal...")
-    bot = Bot(token=BOT_TOKEN)
-    updates = await bot.get_updates(limit=100)
-    for update in updates:
-        if update.message and update.message.text:
-            text = update.message.text
-            for word in text.split():
-                if word.startswith("http"):
-                    save_article(word)
-    print("✅ Importación completada.")
 
 
 if __name__ == "__main__":

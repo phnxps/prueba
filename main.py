@@ -266,10 +266,20 @@ async def check_feeds(context):
     for feed_url in RSS_FEEDS:
         feed = feedparser.parse(feed_url)
         for entry in feed.entries[:5]:
-            if not is_article_saved(entry.link):
-                await send_news(context, entry)
-                save_article(entry.link)
-                new_article_sent = True
+            if is_article_saved(entry.link):
+                print(f"🔴 Descartada: link ya enviado anteriormente → {entry.link}")
+                continue
+
+            if hasattr(entry, 'published_parsed'):
+                published = datetime(*entry.published_parsed[:6])
+                if datetime.now() - published > timedelta(hours=6):
+                    print(f"🔴 Descartada: demasiado antigua ({published}) → {entry.link}")
+                    continue
+
+            await send_news(context, entry)
+            print(f"✅ Publicada correctamente: {entry.title}")
+            save_article(entry.link)
+            new_article_sent = True
 
     # Revisión de eventos especiales detectados hoy
     today = datetime.now().date()

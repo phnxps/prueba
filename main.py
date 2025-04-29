@@ -1,5 +1,3 @@
-que diferencias hay entre este codigo y el del textedit
-
 from sent_articles import init_db, save_article, is_article_saved
 import os
 import feedparser

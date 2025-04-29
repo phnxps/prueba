@@ -379,11 +379,26 @@ async def send_launch_summary(context):
     except Exception as e:
         print(f"Error al enviar resumen de lanzamientos: {e}")
 
+async def import_existing_links():
+    from sent_articles import save_article
+    bot = Bot(token=BOT_TOKEN)
+    try:
+        updates = await bot.get_updates(limit=100)
+        for update in updates:
+            if update.message and update.message.text:
+                links = [word for word in update.message.text.split() if word.startswith('http')]
+                for link in links:
+                    save_article(link)
+        print("✅ Importación completada.")
+    except Exception as e:
+        print(f"Error importando mensajes antiguos: {e}")
+
+
 def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-
     job_queue = application.job_queue
+    asyncio.run(import_existing_links())
     job_queue.run_repeating(check_feeds, interval=600, first=10)
 
     print("Bot iniciado correctamente.")
@@ -394,4 +409,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

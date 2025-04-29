@@ -381,35 +381,23 @@ def main():
 
 
 
-# --- Importar mensajes antiguos y reenviar los no publicados recientes ---
 async def import_existing_links(context):
     print("🔎 Importando mensajes antiguos del canal...")
     bot = context.bot
-    updates = await bot.get_updates(limit=100)
-    seen_urls = []
-    for update in updates:
-        if update.message and update.message.text:
-            for word in update.message.text.split():
-                if word.startswith("http"):
-                    seen_urls.append(word)
-                    save_article(word)  # guardamos el artículo aunque no tengamos fecha
-
-    print("✅ Importación completada.")
-
-    # Reenviar artículos guardados en DB pero no vistos en el canal, si son recientes
-    all_articles = get_all_articles()
-    for url in all_articles:
-        if url not in seen_urls:
-            for feed_url in RSS_FEEDS:
-                feed = feedparser.parse(feed_url)
-                entry = next((e for e in feed.entries if e.link == url), None)
-                if entry and hasattr(entry, "published_parsed"):
-                    published = datetime(*entry.published_parsed[:6])
-                    if datetime.now() - published <= timedelta(hours=3):
-                        print(f"🔁 Reenviando noticia reciente no publicada: {url}")
-                        await send_news(context, entry)
-                        save_article(url)
-                    break
+    seen_urls = set()
+    offset = None
+    while True:
+        updates = await bot.get_updates(offset=offset, limit=100, timeout=10)
+        if not updates:
+            break
+        for update in updates:
+            offset = update.update_id + 1
+            if update.message and update.message.text:
+                for word in update.message.text.split():
+                    if word.startswith("http"):
+                        seen_urls.add(word)
+                        save_article(word)
+    print(f"✅ Se han registrado {len(seen_urls)} URLs del canal como ya enviadas.")
 
 
 if __name__ == "__main__":

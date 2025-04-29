@@ -73,6 +73,26 @@ async def send_news(context, entry):
         if published.date() != datetime.now().date():
             return
 
+    # Filtro mejorado: sólo noticias relevantes de videojuegos
+    valid_keywords = [
+        "videojuego", "videojuegos", "juego", "juegos", "playstation", "ps5", "ps4",
+        "xbox", "series x", "series s", "nintendo", "switch", "consola", "gameplay",
+        "tráiler", "trailer", "beta", "demo", "expansion", "dlc", "actualización",
+        "remaster", "remake", "multijugador", "early access", "open beta"
+    ]
+    blocked_keywords = [
+        "teclado", "ratón", "movil", "móvil", "iphone", "ipad", "android", "smartphone",
+        "smartwatch", "película", "películas", "serie", "series", "netflix", "disney+",
+        "hbo", "filme", "cine", "manga", "anime", "cómic", "comics"
+    ]
+    title_summary = (entry.title + " " + (entry.summary if hasattr(entry, 'summary') else "")).lower()
+
+    contiene_valida = any(p in title_summary for p in valid_keywords)
+    contiene_bloqueada = any(p in title_summary for p in blocked_keywords)
+
+    if contiene_bloqueada and not contiene_valida:
+        return
+
     # Filtro: excluir noticias de cine o series que no estén relacionadas con videojuegos
     title_lower = entry.title.lower()
     summary_lower = (entry.summary if hasattr(entry, 'summary') else "").lower()

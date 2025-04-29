@@ -119,27 +119,43 @@ async def send_news(context, entry):
     special_tags = []
     emoji_special = ''
 
-    # Detección de análisis de Laps4 como ReviewGamer
-    if "laps4.com" in link_lower and "análisis" in title_lower:
-        special_tags.append("#ReviewGamer")
-        emoji_special = '📝'
-
-    # Evento especial detection
-    if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación"]):
+    # Clasificación especial avanzada
+    if any(kw in title_lower for kw in ["direct", "evento especial", "showcase", "game awards", "presentation", "conference", "wholesome direct"]):
         special_tags.insert(0, "#EventoEspecial")
         emoji_special = '🎬'
 
-    # Trailer detection
-    if any(kw in title_lower for kw in ["tráiler", "trailer", "avance", "gameplay"]):
+    if any(kw in title_lower for kw in ["tráiler", "trailer", "gameplay", "avance"]):
         special_tags.append("#TrailerOficial")
-        if not emoji_special:
-            emoji_special = '🔥'
+        emoji_special = '🎥'
 
-    # Nueva detección de ofertas o rebajas
+    if any(kw in title_lower for kw in ["códigos", "código", "code", "giftcode"]):
+        special_tags.append("#CodigosGamer")
+        emoji_special = '🔑'
+
+    if any(kw in title_lower for kw in ["guía", "como encontrar", "cómo encontrar", "cómo derrotar", "como derrotar", "localizar", "localización", "walkthrough"]):
+        special_tags.append("#GuiaGamer")
+        emoji_special = '📖'
+
     if any(kw in title_lower for kw in ["rebaja", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de"]):
         special_tags.append("#OfertaGamer")
         if not emoji_special:
             emoji_special = '💸'
+
+    # Detección de análisis de Laps4 como ReviewGamer
+    if "laps4.com" in link_lower and "análisis" in title_lower:
+        special_tags.append("#ReviewGamer")
+        if not emoji_special:
+            emoji_special = '📝'
+
+    # Evento especial detection (redundant with advanced classification but kept for backward compatibility)
+    if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación"]):
+        if "#EventoEspecial" not in special_tags:
+            special_tags.insert(0, "#EventoEspecial")
+            if not emoji_special:
+                emoji_special = '🎬'
+
+    # Nueva detección de ofertas o rebajas (already handled above, but here to adjust platform_label if generic)
+    if "#OfertaGamer" in special_tags:
         # Si es oferta/rebaja, ajustar platform_label si es genérico
         if platform_label == 'NOTICIAS GAMER':
             # Intentar detectar plataforma en título o resumen para asignar plataforma correcta
@@ -179,7 +195,10 @@ async def send_news(context, entry):
 
     # Review detection
     if any(kw in title_lower for kw in ["análisis", "review", "reseña", "comparativa"]):
-        special_tags.append("#ReviewGamer")
+        if "#ReviewGamer" not in special_tags:
+            special_tags.append("#ReviewGamer")
+        if not emoji_special:
+            emoji_special = '📝'
 
     photo_url = None
     if entry.get("media_content"):
@@ -204,7 +223,7 @@ async def send_news(context, entry):
             print(f"Error obteniendo imagen por scraping: {e}")
 
     # Ajustar caption para eliminar "NOTICIAS GAMER" si es oferta/rebaja o categoría específica
-    if platform_label == 'NOTICIAS GAMER' and ("#OfertaGamer" in special_tags or any(tag in special_tags for tag in ["#EventoEspecial", "#TrailerOficial", "#JuegoGratis", "#ProximoLanzamiento", "#ReviewGamer"])):
+    if platform_label == 'NOTICIAS GAMER' and ("#OfertaGamer" in special_tags or any(tag in special_tags for tag in ["#EventoEspecial", "#TrailerOficial", "#JuegoGratis", "#ProximoLanzamiento", "#ReviewGamer", "#CodigosGamer", "#GuiaGamer"])):
         # En este caso, no usar "NOTICIAS GAMER" genérico
         platform_label = ''
         icon = ''
@@ -212,11 +231,39 @@ async def send_news(context, entry):
 
     hashtags = " ".join(special_tags + ([tag] if tag else []))
 
-    caption = (
-        f"{icon} *{platform_label}*\n\n"
-        f"{emoji_special} *{entry.title}*\n\n"
-        f"{hashtags}"
-    ).strip()
+    # Determinar si es una categoría especial y asignar el título especial correspondiente
+    special_title = ""
+    # Prioridad: Evento, Tráiler, Códigos, Guía, Oferta, Lanzamiento
+    if "#EventoEspecial" in special_tags:
+        special_title = "*🎬 EVENTO ESPECIAL*"
+    elif "#TrailerOficial" in special_tags:
+        special_title = "*🎥 NUEVO TRÁILER*"
+    elif "#CodigosGamer" in special_tags:
+        special_title = "*🔑 CÓDIGOS DISPONIBLES*"
+    elif "#GuiaGamer" in special_tags:
+        special_title = "*📖 GUÍA GAMER*"
+    elif "#OfertaGamer" in special_tags:
+        special_title = "*💸 OFERTA GAMER*"
+    elif "#ProximoLanzamiento" in special_tags:
+        special_title = "*🎉 PRÓXIMO LANZAMIENTO*"
+
+    if special_title:
+        caption = (
+            f"{icon} {special_title}\n\n"
+            f"{emoji_special} *{entry.title}*\n\n"
+            f"{hashtags}"
+        ).strip()
+    elif platform_label:
+        caption = (
+            f"{icon} *{platform_label}*\n\n"
+            f"{emoji_special} *{entry.title}*\n\n"
+            f"{hashtags}"
+        ).strip()
+    else:
+        caption = (
+            f"{emoji_special} *{entry.title}*\n\n"
+            f"{hashtags}"
+        ).strip()
 
     button = InlineKeyboardMarkup([[InlineKeyboardButton("📰 Leer noticia completa", url=entry.link)]])
 

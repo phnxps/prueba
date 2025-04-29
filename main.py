@@ -372,7 +372,7 @@ def main():
     job_queue.run_repeating(check_feeds, interval=600, first=10)
 
     # Importar mensajes antiguos y reenviar los no publicados recientes
-    application.job_queue.run_once(lambda context: asyncio.create_task(import_existing_links(application)), when=0)
+    application.job_queue.run_once(import_existing_links, when=0)
 
     print("Bot iniciado correctamente.")
     application.run_polling()
@@ -380,10 +380,11 @@ def main():
 
 
 
+
 # --- Importar mensajes antiguos y reenviar los no publicados recientes ---
-async def import_existing_links(application):
+async def import_existing_links(context):
     print("🔎 Importando mensajes antiguos del canal...")
-    bot = Bot(token=BOT_TOKEN)
+    bot = context.bot
     updates = await bot.get_updates(limit=100)
     seen_urls = []
     for update in updates:
@@ -406,7 +407,6 @@ async def import_existing_links(application):
                     published = datetime(*entry.published_parsed[:6])
                     if datetime.now() - published <= timedelta(hours=3):
                         print(f"🔁 Reenviando noticia reciente no publicada: {url}")
-                        context = type("Obj", (object,), {"bot": bot})
                         await send_news(context, entry)
                     break
 

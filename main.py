@@ -391,28 +391,24 @@ async def import_existing_links(application):
             for word in update.message.text.split():
                 if word.startswith("http"):
                     seen_urls.append(word)
-                    save_article(word)  # no tenemos published_at, pero guardamos
+                    save_article(word)  # guardamos el artículo aunque no tengamos fecha
+
     print("✅ Importación completada.")
 
-    # Enviar los artículos guardados en DB que no están en el canal, si son recientes (< 3 horas)
-    from sent_articles import get_all_articles
+    # Reenviar artículos guardados en DB pero no vistos en el canal, si son recientes
     all_articles = get_all_articles()
     for url in all_articles:
         if url not in seen_urls:
-            # Enviar solo si fue publicado hace menos de 3 horas
-            feed = None
-            entry = None
             for feed_url in RSS_FEEDS:
                 feed = feedparser.parse(feed_url)
                 entry = next((e for e in feed.entries if e.link == url), None)
-                if entry:
+                if entry and hasattr(entry, "published_parsed"):
+                    published = datetime(*entry.published_parsed[:6])
+                    if datetime.now() - published <= timedelta(hours=3):
+                        print(f"🔁 Reenviando noticia reciente no publicada: {url}")
+                        context = type("Obj", (object,), {"bot": bot})
+                        await send_news(context, entry)
                     break
-            if entry and hasattr(entry, "published_parsed"):
-                published = datetime(*entry.published_parsed[:6])
-                if datetime.now() - published <= timedelta(hours=3):
-                    print(f"🔁 Reenviando noticia reciente no publicada: {url}")
-                    context = type("Obj", (object,), {"bot": bot})
-                    await send_news(context, entry)
 
 
 if __name__ == "__main__":

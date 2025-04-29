@@ -5,11 +5,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Obtener DATABASE_URL
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 def get_connection():
-    return psycopg2.connect(DATABASE_URL, sslmode='require')
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL no está definida")
+
+    result = urlparse(db_url)
+    return psycopg2.connect(
+        dbname=result.path[1:],
+        user=result.username,
+        password=result.password,
+        host=result.hostname,
+        port=result.port,
+        sslmode="require"
+    )
 
 def init_db():
     with get_connection() as conn:

@@ -1,4 +1,5 @@
 from sent_articles import init_db, save_article, is_article_saved
+init_db()
 import os
 import feedparser
 import telegram

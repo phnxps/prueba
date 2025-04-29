@@ -68,10 +68,7 @@ proximos_lanzamientos = []
 last_curiosity_sent = datetime.now() - timedelta(hours=6)
 
 async def send_news(context, entry):
-    if hasattr(entry, 'published_parsed'):
-        published = datetime(*entry.published_parsed[:6])
-        if published.date() != datetime.now().date():
-            return
+    # Permitimos todas las noticias, sin filtrar por fecha de publicación
 
     # Filtro: excluir noticias de cine o series que no estén relacionadas con videojuegos
     title_lower = entry.title.lower()
@@ -134,7 +131,7 @@ async def send_news(context, entry):
             emoji_special = '🔥'
 
     # Nueva detección de ofertas o rebajas
-    if any(kw in title_lower for kw in ["rebaja", "oferta", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de"]):
+    if any(kw in title_lower for kw in ["rebaja", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de"]):
         special_tags.append("#OfertaGamer")
         if not emoji_special:
             emoji_special = '💸'
@@ -165,7 +162,7 @@ async def send_news(context, entry):
             emoji_special = '🎁'
 
     # Proximo lanzamiento detection
-    if any(kw in title_lower for kw in ["anunci", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access"]):
+    if any(kw in title_lower for kw in ["anuncia", "anunciado", "confirmado", "confirmada", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha prevista", "se lanzará"]):
         if not any(block in title_lower for block in ["mantenimiento", "servidores", "online", "downtime", "actualización", "patch notes"]):
             special_tags.append("#ProximoLanzamiento")
             if not emoji_special:
@@ -257,7 +254,7 @@ async def check_feeds(context):
 
     for feed_url in RSS_FEEDS:
         feed = feedparser.parse(feed_url)
-        for entry in feed.entries[:5]:
+        for entry in feed.entries:
             if not is_article_saved(entry.link):
                 await send_news(context, entry)
                 save_article(entry.link)
@@ -311,7 +308,6 @@ async def send_launch_summary(context):
 
 def main():
     application = ApplicationBuilder().token(BOT_TOKEN).build()
-    application.job_queue.run_once(lambda context: asyncio.create_task(import_existing_links()), when=0)
 
     job_queue = application.job_queue
     job_queue.run_repeating(check_feeds, interval=600, first=10)
@@ -320,17 +316,6 @@ def main():
     application.run_polling()
 
 
-async def import_existing_links():
-    print("🔎 Importando mensajes antiguos del canal...")
-    bot = Bot(token=BOT_TOKEN)
-    updates = await bot.get_updates(limit=100)
-    for update in updates:
-        if update.message and update.message.text:
-            text = update.message.text
-            for word in text.split():
-                if word.startswith("http"):
-                    save_article(word)
-    print("✅ Importación completada.")
 
 
 if __name__ == "__main__":

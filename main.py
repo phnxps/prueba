@@ -408,6 +408,7 @@ async def import_existing_links(context):
                     if datetime.now() - published <= timedelta(hours=3):
                         print(f"🔁 Reenviando noticia reciente no publicada: {url}")
                         await send_news(context, entry)
+                        save_article(url)
                     break
 
 

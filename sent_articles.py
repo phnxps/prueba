@@ -1,12 +1,6 @@
-import os
 import sqlite3
 
-# Asegurarte que existe la carpeta montada del volumen
-DB_FOLDER = '/mnt/volume_sort-volume'
-os.makedirs(DB_FOLDER, exist_ok=True)
-
-# Base de datos dentro del volumen
-DB_FILE = os.path.join(DB_FOLDER, 'sent_articles.db')
+DB_FILE = 'sent_articles.db'
 
 def init_db():
     """Inicializar la base de datos si no existe."""

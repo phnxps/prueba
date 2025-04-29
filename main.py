@@ -195,15 +195,22 @@ async def send_news(context, entry):
             if not emoji_special:
                 emoji_special = '🎉'
 
-    # Oferta especial detection
+    # Oferta especial detection (mejorado: incluye reservas y más expresiones)
     if any(kw in title_lower for kw in [
         "oferta", "rebaja", "descuento", "promoción", "precio especial", 
         "baja de precio", "chollo", "ahorro", "por menos de", "por solo", 
-        "cuesta solo", "ahora a", "costaba", "a este precio"
+        "cuesta solo", "ahora a", "costaba", "a este precio", "reservar", "reserva", "mejor precio", "disponible para reservar"
     ]):
         special_tags.append("#OfertaGamer")
         if not emoji_special:
             emoji_special = '💸'
+
+    # Guia Gamer detection (después de #OfertaGamer)
+    if any(kw in title_lower for kw in [
+        "guía", "trucos", "cómo", "dónde", "localización", "encontrar", 
+        "conseguir", "desbloquear", "todos los secretos", "cómo encontrar", "guia completa"
+    ]):
+        special_tags.append("#GuiaGamer")
 
     if "#ProximoLanzamiento" in special_tags:
         fecha_publicacion = published.strftime('%d/%m/%Y') if 'published' in locals() else "Próximamente"

@@ -64,6 +64,11 @@ def get_all_articles():
     cursor = conn.cursor()
     cursor.execute('SELECT url FROM articles')
     articles = [row[0] for row in cursor.fetchall()]
+
+    if __name__ == "__main__":
+    init_db()
+    save_article("https://ejemplo.com/test")
+    print("✅ Guardado de prueba ejecutado.")
     cursor.close()
     conn.close()
     return articles

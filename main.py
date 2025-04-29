@@ -100,7 +100,21 @@ async def send_news(context, entry):
         "oferta", "rebaja", "descuento", "promoción", "precio especial", "chollo", "ahorro"
     ])
 
-    if contiene_bloqueada and not (contiene_valida or es_oferta_juego_o_consola):
+    if contiene_bloqueada:
+        print(f"🔴 Descartada por palabra bloqueada → {entry.title}")
+        return
+
+    if not contiene_valida and not es_oferta_juego_o_consola:
+        print(f"🔴 Descartada por no ser de videojuegos → {entry.title}")
+        return
+
+    # Filtro estricto: sólo pasar si claramente se menciona videojuego
+    if not any(word in title_summary for word in [
+        "juego", "videojuego", "consola", "nintendo", "playstation", "xbox", 
+        "ps5", "ps4", "switch", "steam", "gameplay", "tráiler", "trailer", 
+        "expansión", "dlc", "beta", "demo", "remaster", "remake", "early access", "battle pass"
+    ]):
+        print(f"🔴 Descartada: noticia no relacionada con videojuegos → {entry.title}")
         return
 
     # Filtro: excluir noticias de cine o series que no estén relacionadas con videojuegos
@@ -182,7 +196,11 @@ async def send_news(context, entry):
                 emoji_special = '🎉'
 
     # Oferta especial detection
-    if any(kw in title_lower for kw in ["oferta", "rebaja", "descuento", "promoción", "precio especial", "baja de precio", "chollo", "ahorro"]):
+    if any(kw in title_lower for kw in [
+        "oferta", "rebaja", "descuento", "promoción", "precio especial", 
+        "baja de precio", "chollo", "ahorro", "por menos de", "por solo", 
+        "cuesta solo", "ahora a", "costaba", "a este precio"
+    ]):
         special_tags.append("#OfertaGamer")
         if not emoji_special:
             emoji_special = '💸'
@@ -343,3 +361,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

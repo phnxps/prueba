@@ -71,7 +71,8 @@ last_curiosity_sent = datetime.now() - timedelta(hours=6)
 async def send_news(context, entry):
     if hasattr(entry, 'published_parsed'):
         published = datetime(*entry.published_parsed[:6])
-        if published.date() != datetime.now().date():
+        forced_today = datetime(2025, 4, 29).date()
+        if published.date() != forced_today:
             return
 
     # Filtro mejorado: sólo noticias relevantes de videojuegos
@@ -79,11 +80,13 @@ async def send_news(context, entry):
         "videojuego", "videojuegos", "juego", "juegos", "playstation", "ps5", "ps4",
         "xbox", "series x", "series s", "nintendo", "switch", "consola", "gameplay",
         "tráiler", "trailer", "beta", "demo", "expansion", "dlc", "actualización",
-        "remaster", "remake", "multijugador", "early access", "open beta"
+        "remaster", "remake", "multijugador", "early access", "open beta", "requisitos",
+        "jugable", "filtrado", "filtrada", "leak", "desarrollo", "anuncio", "anunciado"
     ]
     blocked_keywords = [
-        "teclado", "hardware", "ratón gaming", "ratón", "periférico", "gaming gear", "movil", "móvil", "iphone", "ipad", "android", "smartphone",
-        "smartwatch", "película", "películas", "serie", "series", "netflix", "disney+",
+        "teclado", "hardware", "ratón gaming", "ratón", "periférico", "gaming gear",
+        "iphone", "ipad", "android", "smartphone", "smartwatch",
+        "película", "películas", "serie", "series", "netflix", "disney+",
         "hbo", "filme", "cine", "manga", "anime", "cómic", "comics",
         "oferta teclado", "oferta ratón", "rebaja gaming gear"
     ]
@@ -91,6 +94,14 @@ async def send_news(context, entry):
 
     contiene_valida = any(p in title_summary for p in valid_keywords)
     contiene_bloqueada = any(p in title_summary for p in blocked_keywords)
+
+    # Excepción: permitir franquicias aunque haya palabras bloqueadas
+    franquicias_permitidas = [
+        "pokemon masters", "overwatch", "zelda", "titanfall", "gears of war", "halo",
+        "call of duty", "final fantasy", "resident evil", "assassin's creed"
+    ]
+    if any(franq in title_summary for franq in franquicias_permitidas):
+        contiene_bloqueada = False
 
     # Nueva lógica mejorada
     es_oferta_juego_o_consola = any(p in title_summary for p in [

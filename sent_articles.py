@@ -1,6 +1,6 @@
 import sqlite3
 
-DB_FILE = 'sent_articles.db'
+DB_FILE = '/mnt/volume/sent_articles.db'
 
 def init_db():
     """Inicializar la base de datos si no existe."""

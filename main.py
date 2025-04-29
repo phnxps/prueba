@@ -68,6 +68,11 @@ proximos_lanzamientos = []
 last_curiosity_sent = datetime.now() - timedelta(hours=6)
 
 async def send_news(context, entry):
+    # Filtrar noticias recientes (últimas 6 horas)
+    if hasattr(entry, 'published_parsed'):
+        published = datetime(*entry.published_parsed[:6])
+        if datetime.now() - published > timedelta(hours=6):
+            return
     # Permitimos todas las noticias, sin filtrar por fecha de publicación
 
     # Filtro: excluir noticias de cine o series que no estén relacionadas con videojuegos

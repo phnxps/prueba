@@ -1,21 +1,29 @@
+from dotenv import load_dotenv
 import os
 import psycopg2
 
+# Cargar variables de entorno
+load_dotenv()
+
+# Variables de conexión
 DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT", "5432")
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 
+# Función para conectarse a la base de datos
 def get_connection():
     return psycopg2.connect(
         host=DB_HOST,
         port=DB_PORT,
         dbname=DB_NAME,
         user=DB_USER,
-        password=DB_PASSWORD
+        password=DB_PASSWORD,
+        sslmode='require'  # IMPORTANTE para Supabase
     )
 
+# Resto de funciones que usan get_connection()
 def init_db():
     with get_connection() as conn:
         with conn.cursor() as cursor:
@@ -37,27 +45,4 @@ def save_article(url):
     except Exception as e:
         print(f"Error al guardar artículo: {e}")
 
-def is_article_saved(url):
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT 1 FROM articles WHERE url = %s', (url,))
-            result = cursor.fetchone()
-            return result is not None
-
-def delete_old_articles(days=30):
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute('DELETE FROM articles WHERE created_at < NOW() - INTERVAL %s', (f'{days} days',))
-            conn.commit()
-
-def get_all_articles():
-    with get_connection() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT url FROM articles')
-            articles = [row[0] for row in cursor.fetchall()]
-            return articles
-
-if __name__ == "__main__":
-    init_db()
-    save_article("https://ejemplo.com/test")
-    print("✅ Guardado de prueba ejecutado.")
+# etc.

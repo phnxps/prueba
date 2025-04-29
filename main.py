@@ -77,25 +77,26 @@ async def send_news(context, entry):
     title_lower = entry.title.lower()
     summary_lower = (entry.summary if hasattr(entry, 'summary') else "").lower()
 
-    if any(keyword in title_lower for keyword in ["película", "serie", "actor", "cine", "temporada", "episodio"]) and not any(
+    if any(keyword in title_lower for keyword in ["película", "serie", "actor", "cine", "temporada", "episodio", "manga", "anime"]) and not any(
         related in title_lower for related in ["juego", "videojuego", "expansión", "dlc", "adaptación", "game"]
     ):
         return
 
-    if any(keyword in summary_lower for keyword in ["película", "serie", "actor", "cine", "temporada", "episodio"]) and not any(
+    if any(keyword in summary_lower for keyword in ["película", "serie", "actor", "cine", "temporada", "episodio", "manga", "anime"]) and not any(
         related in summary_lower for related in ["juego", "videojuego", "expansión", "dlc", "adaptación", "game"]
     ):
         return
 
     link = entry.link.lower()
-    if 'playstation' in link:
-        platform_label = 'PLAYSTATION'
-        icon = '🎮'
-        tag = '#PlayStation'
-    elif 'switch 2' in link or 'switch-2' in link:
+    # Corrección de detección de plataforma priorizando título y resumen para Nintendo Switch 2
+    if any(kw in title_lower for kw in ["switch 2", "nintendo switch 2"]) or any(kw in summary_lower for kw in ["switch 2", "nintendo switch 2"]):
         platform_label = 'NINTENDO SWITCH 2'
         icon = '🍄'
         tag = '#NintendoSwitch2'
+    elif 'playstation' in link:
+        platform_label = 'PLAYSTATION'
+        icon = '🎮'
+        tag = '#PlayStation'
     elif 'switch' in link:
         platform_label = 'NINTENDO SWITCH'
         icon = '🍄'
@@ -113,13 +114,13 @@ async def send_news(context, entry):
 
     link_lower = entry.link.lower()
 
+    special_tags = []
+    emoji_special = ''
+
     # Detección de análisis de Laps4 como ReviewGamer
     if "laps4.com" in link_lower and "análisis" in title_lower:
         special_tags.append("#ReviewGamer")
         emoji_special = '📝'
-
-    special_tags = []
-    emoji_special = ''
 
     # Evento especial detection
     if any(kw in title_lower for kw in ["state of play", "nintendo direct", "showcase", "summer game fest", "game awards", "evento especial", "presentation", "conference", "presentación"]):
@@ -131,6 +132,31 @@ async def send_news(context, entry):
         special_tags.append("#TrailerOficial")
         if not emoji_special:
             emoji_special = '🔥'
+
+    # Nueva detección de ofertas o rebajas
+    if any(kw in title_lower for kw in ["rebaja", "oferta", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de"]):
+        special_tags.append("#OfertaGamer")
+        if not emoji_special:
+            emoji_special = '💸'
+        # Si es oferta/rebaja, ajustar platform_label si es genérico
+        if platform_label == 'NOTICIAS GAMER':
+            # Intentar detectar plataforma en título o resumen para asignar plataforma correcta
+            if any(kw in title_lower for kw in ["switch 2", "nintendo switch 2"]) or any(kw in summary_lower for kw in ["switch 2", "nintendo switch 2"]):
+                platform_label = 'NINTENDO SWITCH 2'
+                icon = '🍄'
+                tag = '#NintendoSwitch2'
+            elif any(kw in title_lower for kw in ["switch"]) or any(kw in summary_lower for kw in ["switch"]):
+                platform_label = 'NINTENDO SWITCH'
+                icon = '🍄'
+                tag = '#NintendoSwitch'
+            elif any(kw in title_lower for kw in ["playstation"]) or any(kw in summary_lower for kw in ["playstation"]):
+                platform_label = 'PLAYSTATION'
+                icon = '🎮'
+                tag = '#PlayStation'
+            elif any(kw in title_lower for kw in ["xbox"]) or any(kw in summary_lower for kw in ["xbox"]):
+                platform_label = 'XBOX'
+                icon = '🟢'
+                tag = '#Xbox'
 
     # Free game detection
     if any(kw in title_lower for kw in ["gratis", "free", "regalo"]):
@@ -175,7 +201,14 @@ async def send_news(context, entry):
         except Exception as e:
             print(f"Error obteniendo imagen por scraping: {e}")
 
-    hashtags = " ".join(special_tags + [tag])
+    # Ajustar caption para eliminar "NOTICIAS GAMER" si es oferta/rebaja o categoría específica
+    if platform_label == 'NOTICIAS GAMER' and ("#OfertaGamer" in special_tags or any(tag in special_tags for tag in ["#EventoEspecial", "#TrailerOficial", "#JuegoGratis", "#ProximoLanzamiento", "#ReviewGamer"])):
+        # En este caso, no usar "NOTICIAS GAMER" genérico
+        platform_label = ''
+        icon = ''
+        tag = ''
+
+    hashtags = " ".join(special_tags + ([tag] if tag else []))
 
     caption = (
         f"{icon} *{platform_label}*\n\n"

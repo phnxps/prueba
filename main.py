@@ -164,6 +164,21 @@ async def send_news(context, entry):
         icon = '🎮'
         tag = '#NoticiasGamer'
 
+    # Ajuste de plataforma en base a etiquetas especiales prioritarias
+    # Prioridad: Evento > Oferta > Guía > Análisis
+    if any(tag == "#EventoEspecial" for tag in special_tags):
+        platform_label = 'EVENTO ESPECIAL'
+        icon = '🎬'
+    elif any(tag == "#OfertaGamer" for tag in special_tags):
+        platform_label = 'OFERTA GAMER'
+        icon = '💸'
+    elif any(tag == "#GuiaGamer" for tag in special_tags):
+        platform_label = 'GUIA GAMER'
+        icon = '📚'
+    elif any(tag == "#ReviewGamer" for tag in special_tags):
+        platform_label = 'ANÁLISIS GAMER'
+        icon = '📝'
+
     title_lower = entry.title.lower()
 
     link_lower = entry.link.lower()
@@ -379,3 +394,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

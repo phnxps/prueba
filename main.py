@@ -1,4 +1,4 @@
-from sent_articles import init_db, save_article, is_article_saved
+from sent_articles import init_db, save_article, is_article_saved, get_all_articles
 import os
 import feedparser
 import telegram
@@ -314,7 +314,6 @@ async def check_feeds(context):
 
     # Revisión de eventos especiales detectados hoy
     today = datetime.now().date()
-    from sent_articles import get_all_articles  # Necesitamos tener esta función en sent_articles.py
     articles_today = [link for link in get_all_articles() if datetime.now().date() == today]
 
     eventos_detectados = False

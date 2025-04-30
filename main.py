@@ -412,12 +412,13 @@ async def import_existing_links(context):
     seen_urls = set()
     offset = None
     while True:
-        updates = await bot.get_updates(offset=offset, limit=100, timeout=10)
+        updates = await bot.get_chat_history(chat_id=CHANNEL_USERNAME, limit=100)
         if not updates:
             break
         for update in updates:
-            offset = update.update_id + 1
-            if update.message and update.message.text:
+            # Mantener la compatibilidad con el procesamiento anterior:
+            # update.message y update.message.text
+            if hasattr(update, "message") and hasattr(update.message, "text") and update.message.text:
                 for word in update.message.text.split():
                     clean_url = word.strip().strip('()[]<>.,!?\'"')
                     if clean_url.startswith("http"):
@@ -429,19 +430,25 @@ async def import_existing_links(context):
     print("🔁 Reenviando artículos recientes no publicados...")
     from sent_articles import get_all_articles
     articles_in_db = get_all_articles()
+    print("🧠 Comparando con artículos en base de datos...")
     for url in articles_in_db:
         if url not in seen_urls:
             # Verificar si fue publicado hace menos de 3 horas
             try:
-                feed = feedparser.parse(url)
-                for entry in feed.entries:
-                    if entry.link == url and hasattr(entry, 'published_parsed'):
-                        published = datetime(*entry.published_parsed[:6])
-                        if datetime.now() - published <= timedelta(hours=3):
-                            await send_news(context, entry)
+                for feed_url in RSS_FEEDS:
+                    feed = feedparser.parse(feed_url)
+                    for entry in feed.entries:
+                        if entry.link == url and hasattr(entry, 'published_parsed'):
+                            published = datetime(*entry.published_parsed[:6])
+                            if datetime.now() - published <= timedelta(hours=3):
+                                await send_news(context, entry)
+                            break
+                else:
+                    print(f"❌ No se reenviará: {url} (muy antiguo o no encontrado)")
             except Exception as e:
                 print(f"Error al reenviar {url}: {e}")
 
 
 if __name__ == "__main__":
     main()
+

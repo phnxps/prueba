@@ -137,7 +137,11 @@ async def send_news(context, entry):
         special_tags.append("#CodigosGamer")
         emoji_special = '🔑'
 
-    if any(kw in title_lower for kw in ["guía", "como encontrar", "cómo encontrar", "cómo derrotar", "como derrotar", "localizar", "localización", "walkthrough"]):
+    if any(kw in title_lower for kw in [
+        "guía", "como encontrar", "cómo encontrar", "cómo derrotar", "como derrotar", 
+        "localizar", "localización", "walkthrough", "cómo resolver", "todas las ubicaciones", 
+        "como conseguir", "cómo conseguir", "dónde encontrar", "como desbloquear", "cómo desbloquear"
+    ]):
         special_tags.append("#GuiaGamer")
         emoji_special = '📖'
 
@@ -190,6 +194,17 @@ async def send_news(context, entry):
         special_tags.append("#JuegoGratis")
         if not emoji_special:
             emoji_special = '🎁'
+    # Free game detection (extended)
+    if any(kw in title_lower for kw in ["gratis", "free", "regalo", "hazte con", "obtener gratis", "puedes conseguir"]):
+        special_tags.append("#JuegoGratis")
+        if not emoji_special:
+            emoji_special = '🎁'
+    # Filtro para descartar artículos no relacionados con videojuegos
+    if not any(word in summary_lower + title_lower for word in [
+        "videojuego", "juego", "consola", "ps5", "xbox", "switch", "gaming", "nintendo", "playstation",
+        "dlc", "expansión", "demo", "tráiler", "skins", "jugabilidad", "personaje", "mapa", "nivel", "gamer"
+    ]):
+        return
 
     # Proximo lanzamiento detection (mejorada para evitar falsos positivos)
     if any(kw in title_lower for kw in ["anuncia", "anunciado", "confirmado", "confirmada", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha prevista", "se lanzará"]):
@@ -403,6 +418,23 @@ async def import_existing_links(context):
                         seen_urls.add(clean_url)
                         save_article(clean_url)
     print(f"✅ Se han registrado {len(seen_urls)} URLs del canal como ya enviadas.")
+
+    # Reenviar artículos recientes que no están en el canal
+    print("🔁 Reenviando artículos recientes no publicados...")
+    from sent_articles import get_all_articles
+    articles_in_db = get_all_articles()
+    for url in articles_in_db:
+        if url not in seen_urls:
+            # Verificar si fue publicado hace menos de 3 horas
+            try:
+                feed = feedparser.parse(url)
+                for entry in feed.entries:
+                    if entry.link == url and hasattr(entry, 'published_parsed'):
+                        published = datetime(*entry.published_parsed[:6])
+                        if datetime.now() - published <= timedelta(hours=3):
+                            await send_news(context, entry)
+            except Exception as e:
+                print(f"Error al reenviar {url}: {e}")
 
 
 if __name__ == "__main__":

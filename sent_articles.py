@@ -30,6 +30,26 @@ def init_db():
             ''')
             conn.commit()
 
+def add_missing_column():
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name='articles' AND column_name='published_at'
+                        ) THEN
+                            ALTER TABLE articles ADD COLUMN published_at TIMESTAMP;
+                        END IF;
+                    END;
+                    $$;
+                """)
+                conn.commit()
+    except Exception as e:
+        print(f"Error al verificar o crear columna: {e}")
+
 def save_article(url, published_at=None):
     try:
         with get_connection() as conn:
@@ -72,3 +92,7 @@ def get_articles_not_in_channel(existing_urls, max_age_hours=3):
                 WHERE url NOT IN %s AND published_at >= NOW() - INTERVAL %s
             ''', (tuple(existing_urls), f'{max_age_hours} hours'))
             return [row[0] for row in cursor.fetchall()]
+
+if __name__ == "__main__":
+    init_db()
+    add_missing_column()

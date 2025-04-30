@@ -212,7 +212,7 @@ async def send_news(context, entry):
         return
 
     # Proximo lanzamiento detection (mejorada para evitar falsos positivos)
-    if any(kw in title_lower for kw in ["anuncia", "anunciado", "confirmado", "confirmada", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha prevista", "se lanzará"]):
+    if any(kw in title_lower for kw in ["anuncia", "anunciado", "confirmado", "confirmada", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha prevista", "se lanzará"]) and "retrasa" not in title_lower and "retraso" not in title_lower:
         if not any(block in title_lower for block in ["mantenimiento", "servidores", "online", "downtime", "actualización", "patch notes"]):
             if not any(false_positive in title_lower for false_positive in ["mejor lanzamiento", "ya disponible", "ha enamorado", "lanzado", "el lanzamiento de", "ya está", "ya se encuentra", "notas de metacritic"]):
                 special_tags.append("#ProximoLanzamiento")
@@ -224,7 +224,8 @@ async def send_news(context, entry):
         proximos_lanzamientos.append(f"- {entry.title} ({fecha_publicacion})")
 
     # Review detection
-    if any(kw in title_lower for kw in ["análisis", "review", "reseña", "comparativa"]):
+if any(kw in title_lower for kw in ["análisis", "review", "reseña", "comparativa"]):
+    if "reseñas extremadamente positivas" not in title_lower:
         if "#ReviewGamer" not in special_tags:
             special_tags.append("#ReviewGamer")
         if not emoji_special:

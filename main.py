@@ -224,12 +224,12 @@ async def send_news(context, entry):
         proximos_lanzamientos.append(f"- {entry.title} ({fecha_publicacion})")
 
     # Review detection
-if any(kw in title_lower for kw in ["análisis", "review", "reseña", "comparativa"]):
-    if "reseñas extremadamente positivas" not in title_lower:
-        if "#ReviewGamer" not in special_tags:
-            special_tags.append("#ReviewGamer")
-        if not emoji_special:
-            emoji_special = '📝'
+    if any(kw in title_lower for kw in ["análisis", "review", "reseña", "comparativa"]):
+        if "reseñas extremadamente positivas" not in title_lower:
+            if "#ReviewGamer" not in special_tags:
+                special_tags.append("#ReviewGamer")
+            if not emoji_special:
+                emoji_special = '📝'
 
     photo_url = None
     if entry.get("media_content"):
@@ -451,4 +451,3 @@ async def import_existing_links(context):
 
 if __name__ == "__main__":
     main()
-

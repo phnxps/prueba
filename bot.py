@@ -30,4 +30,4 @@ def verificar_nuevos_juegos():
 if __name__ == "__main__":
     while True:
         verificar_nuevos_juegos()
-        time.sleep(21600)  # cada 6h
+        time.sleep(1200)  # cada 20 minutos

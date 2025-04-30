@@ -325,7 +325,11 @@ async def send_news(context, entry):
                 reply_markup=button
             )
         # Guardar el artículo solo si el mensaje se envió correctamente
-        save_article(entry.link)
+        if hasattr(entry, 'published_parsed'):
+            published = datetime(*entry.published_parsed[:6])
+        else:
+            published = datetime.now()
+        save_article(entry.link, published)
     except Exception as e:
         print(f"Error al enviar noticia: {e}")
 

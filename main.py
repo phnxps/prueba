@@ -4,7 +4,7 @@ import feedparser
 import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Bot
 from telegram.ext import ApplicationBuilder
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import random
 import requests
 from bs4 import BeautifulSoup
@@ -405,6 +405,9 @@ def main():
     job_queue = application.job_queue
     job_queue.run_repeating(check_feeds, interval=600, first=10)
 
+    # Enviar resumen diario todos los días a las 22:00
+    job_queue.run_daily(send_launch_summary, time=time(hour=22, minute=0))
+
     # Importar mensajes antiguos y reenviar los no publicados recientes
     application.job_queue.run_once(import_existing_links, when=0)
 
@@ -460,3 +463,4 @@ async def import_existing_links(context):
 
 if __name__ == "__main__":
     main()
+

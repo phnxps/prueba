@@ -89,6 +89,10 @@ async def send_news(context, entry):
     ):
         return
 
+    # Filtro adicional para ignorar noticias relacionadas con Wordle
+    if "wordle" in title_lower or "wordle" in summary_lower:
+        return
+
     link = entry.link.lower()
     # Mejorada: detección precisa de Nintendo Switch 2 (requiere "nintendo" y "switch 2" en título o resumen)
     if (("nintendo" in title_lower or "nintendo" in summary_lower) and ("switch 2" in title_lower or "switch 2" in summary_lower)):
@@ -134,8 +138,9 @@ async def send_news(context, entry):
             emoji_special = '🎥'
 
     if any(kw in title_lower for kw in ["códigos", "código", "code", "giftcode"]):
-        special_tags.append("#CodigosGamer")
-        emoji_special = '🔑'
+        if not any(kw in title_lower for kw in ["error", "problema", "fallo", "solucionar", "solución"]):
+            special_tags.append("#CodigosGamer")
+            emoji_special = '🔑'
 
     if any(kw in title_lower for kw in [
         "guía", "como encontrar", "cómo encontrar", "cómo derrotar", "como derrotar", 
@@ -145,7 +150,7 @@ async def send_news(context, entry):
         special_tags.append("#GuiaGamer")
         emoji_special = '📖'
 
-    if any(kw in title_lower for kw in ["rebaja", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de"]):
+    if any(kw in title_lower for kw in ["rebaja", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de", "bundle"]):
         special_tags.append("#OfertaGamer")
         if not emoji_special:
             emoji_special = '💸'
@@ -275,7 +280,7 @@ async def send_news(context, entry):
     if special_title:
         caption = (
             f"{icon} {special_title}\n\n"
-            f"*{entry.title}*\n\n"
+            f"{emoji_special} *{entry.title}*\n\n"
             f"{hashtags}"
         ).strip()
     elif platform_label:

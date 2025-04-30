@@ -191,12 +191,13 @@ async def send_news(context, entry):
         if not emoji_special:
             emoji_special = '🎁'
 
-    # Proximo lanzamiento detection
+    # Proximo lanzamiento detection (mejorada para evitar falsos positivos)
     if any(kw in title_lower for kw in ["anuncia", "anunciado", "confirmado", "confirmada", "lanzamiento", "próximo", "proximo", "sale", "disponible", "estrena", "estreno", "estrenará", "fecha confirmada", "open beta", "demo", "early access", "llegará", "fecha prevista", "se lanzará"]):
         if not any(block in title_lower for block in ["mantenimiento", "servidores", "online", "downtime", "actualización", "patch notes"]):
-            special_tags.append("#ProximoLanzamiento")
-            if not emoji_special:
-                emoji_special = '🎉'
+            if not any(false_positive in title_lower for false_positive in ["mejor lanzamiento", "ya disponible", "ha enamorado", "lanzado", "el lanzamiento de", "ya está", "ya se encuentra", "notas de metacritic"]):
+                special_tags.append("#ProximoLanzamiento")
+                if not emoji_special:
+                    emoji_special = '🎉'
 
     if "#ProximoLanzamiento" in special_tags:
         fecha_publicacion = published.strftime('%d/%m/%Y') if 'published' in locals() else "Próximamente"
@@ -293,6 +294,8 @@ async def send_news(context, entry):
                 disable_web_page_preview=False,
                 reply_markup=button
             )
+        # Guardar el artículo solo si el mensaje se envió correctamente
+        save_article(entry.link)
     except Exception as e:
         print(f"Error al enviar noticia: {e}")
 
@@ -316,10 +319,10 @@ async def check_feeds(context):
     for feed_url in RSS_FEEDS:
         feed = feedparser.parse(feed_url)
         for entry in feed.entries:
-            if not is_article_saved(entry.link):
-                await send_news(context, entry)
-                save_article(entry.link)
-                new_article_sent = True
+            if is_article_saved(entry.link):
+                continue
+            await send_news(context, entry)
+            new_article_sent = True
 
     # Revisión de eventos especiales detectados hoy
     today = datetime.now().date()

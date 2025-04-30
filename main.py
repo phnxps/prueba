@@ -150,10 +150,17 @@ async def send_news(context, entry):
         special_tags.append("#GuiaGamer")
         emoji_special = '📖'
 
-    if any(kw in title_lower for kw in ["rebaja", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de", "bundle"]):
+    if any(kw in title_lower for kw in ["rebaja", "descuento", "precio reducido", "promoción", "baja de precio", "por solo", "al mejor precio", "de oferta", "está por menos de", "bundle", "mejores ofertas"]) \
+        or "mejores ofertas" in title_lower:
         special_tags.append("#OfertaGamer")
         if not emoji_special:
             emoji_special = '💸'
+
+    # Detección de retrasos de lanzamiento
+    if any(kw in title_lower for kw in ["retrasa", "retraso", "se retrasa", "aplazado", "postergado"]):
+        special_tags.append("#LanzamientoRetrasado")
+        if not emoji_special:
+            emoji_special = '⏳'
 
     # Detección de análisis de Laps4 como ReviewGamer
     if "laps4.com" in link_lower and "análisis" in title_lower:
@@ -264,7 +271,7 @@ async def send_news(context, entry):
 
     # Determinar si es una categoría especial y asignar el título especial correspondiente
     special_title = ""
-    # Prioridad: Evento, Tráiler, Códigos, Guía, Oferta, Lanzamiento
+    # Prioridad: Evento, Tráiler, Códigos, Guía, Oferta, Lanzamiento, Retrasado
     if "#EventoEspecial" in special_tags:
         special_title = "*🎬 EVENTO ESPECIAL*"
     elif "#TrailerOficial" in special_tags:
@@ -277,6 +284,8 @@ async def send_news(context, entry):
         special_title = "*💸 OFERTA GAMER*"
     elif "#ProximoLanzamiento" in special_tags:
         special_title = "*🎉 PRÓXIMO LANZAMIENTO*"
+    elif "#LanzamientoRetrasado" in special_tags:
+        special_title = "*⏳ RETRASADO*"
 
     if special_title:
         caption = (
@@ -412,7 +421,7 @@ async def import_existing_links(context):
     seen_urls = set()
     offset = None
     while True:
-        updates = await bot.get_chat_history(chat_id=CHANNEL_USERNAME, limit=100)
+        updates = await bot.get_updates(limit=100)
         if not updates:
             break
         for update in updates:
